@@ -1,13 +1,21 @@
 import pandas as pd
 import re
 import time
-from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+import os
+
+# 기존 CSV 파일에서 첫 번째 ID 불러오기
+def get_latest_id(csv_filename):
+    if os.path.exists(csv_filename):  # 파일이 존재하는 경우
+        df_existing = pd.read_csv(csv_filename, encoding="utf-8-sig")
+        if not df_existing.empty:
+            return str(df_existing.iloc[0]["id"])  # 첫 번째 ID 반환
+    return None  # 파일이 없거나 데이터가 없는 경우 None 반환
 
 # 크롬 드라이버 설정
 chrome_options = Options()
@@ -19,14 +27,15 @@ service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # 페이지 이동
-url = "https://tossinvest.com/stocks/A005930/community"
+url = "https://tossinvest.com/stocks/A000660/community" # sk 하이닉스 url
 driver.get(url)
 time.sleep(3)
 
 # 최신순 정렬 버튼 클릭
-sort_button = driver.find_element(By.CSS_SELECTOR, "button[data-contents-label='인기순']")
-sort_button.click()
-time.sleep(3)
+def change_recent_option():
+    sort_button = driver.find_element(By.CSS_SELECTOR, "button[data-contents-label='인기순']")
+    sort_button.click()
+    time.sleep(3)
 
 # 스크롤 함수
 def scroll_down():
@@ -45,8 +54,7 @@ def extract_text(element):
 
 # 거래 내역을 추출하는 함수
 def extract_transaction(article):
-    """거래 내역 추출
-        이 부분도 일단 아래 내용 먼저 본 다음 분석하는게 나을듯?"""
+    """거래 내역 추출"""
     try:
         transaction_block = article.find_element(By.CSS_SELECTOR, "section._1sihfl61 div.z6n2t5x")
         text = transaction_block.text.strip()
@@ -79,58 +87,38 @@ def extract_transaction(article):
     except:
         return None  # 거래 내역이 없으면 None 반환
 
-
 def extract_time(article):
-    """댓글 작성 시간을 절대적인 시간으로 변환하여 추출"""
+    """댓글 작성 시간을 datetime 속성값에서 직접 추출"""
     try:
         time_element = article.find_element(By.CSS_SELECTOR, "time._1tvp9v40")
-        relative_time = time_element.text.strip() if time_element else None
+        absolute_time = time_element.get_attribute("datetime") if time_element else None
 
-        # 예외 처리: relative_time이 None이면 반환
-        if not relative_time:
-            return None
-
-        # 현재 시간
-        now = datetime.now()
-
-        # 상대 시간을 절대 시간으로 변환
-        if "분 전" in relative_time:
-            match = re.search(r"(\d+)분 전", relative_time)
-            if match:
-                minutes_ago = int(match.group(1))
-                absolute_time = now - timedelta(minutes=minutes_ago)
-        elif "시간 전" in relative_time:
-            match = re.search(r"(\d+)시간 전", relative_time)
-            if match:
-                hours_ago = int(match.group(1))
-                absolute_time = now - timedelta(hours=hours_ago)
-        elif "일 전" in relative_time:
-            match = re.search(r"(\d+)일 전", relative_time)
-            if match:
-                days_ago = int(match.group(1))
-                absolute_time = now - timedelta(days=days_ago)
-        else:
-            # "YYYY-MM-DD HH:MM" 형식일 경우
-            try:
-                absolute_time = datetime.strptime(relative_time, "%Y-%m-%d %H:%M")
-            except ValueError:
-                return None  # 변환 실패 시 None 반환
-
-        return absolute_time.strftime("%Y-%m-%d %H:%M:%S")  # 포맷 변환 후 반환
-
+        return absolute_time  # 그대로 반환 (ISO 8601 형식)
+    
     except Exception as e:
         print(f"시간 변환 오류: {e}")
         return None
 
-
+# CSV 파일명 설정
+csv_filename = "sk_hynix_comments.csv"
+latest_id = get_latest_id(csv_filename)  # 기존 파일에서 첫 번째 ID 불러오기
 
 # 댓글 크롤링
 data = []
+stop_crawling = False  # 탐색 중단 여부 플래그
+
 def crawl():
+    global stop_crawling
     articles = driver.find_elements(By.CSS_SELECTOR, "article.comment")
     for article in articles:
         post_id = article.get_attribute("data-post-anchor-id")  # ID 추출
         
+        # 기존 ID와 일치하면 크롤링 중단
+        if latest_id and post_id == latest_id:
+            print(f"기존 ID ({latest_id})와 일치하는 댓글 발견. 크롤링 중단.")
+            stop_crawling = True
+            return
+
         # 제목 추출
         title_element = article.find_element(By.CSS_SELECTOR, "a span.tw-1r5dc8g0")
         title = title_element.text.strip() if title_element else None
@@ -149,7 +137,7 @@ def crawl():
             "id": post_id,
             "title": title,
             "content": content,
-            "comment_time": comment_time,  # 🕒 절대 시간으로 변환된 댓글 작성 시간 추가
+            "comment_time": comment_time,
             "stock_name": None,
             "quantity": None,
             "transaction_type": None,
@@ -163,22 +151,34 @@ def crawl():
 
         data.append(row)
 
-
 # 크롤링 실행
+change_recent_option()
 for _ in range(5):
+    if stop_crawling:
+        break
     crawl()
     scroll_down()
 
 # 데이터 저장
-df = pd.DataFrame(data)
+df_new = pd.DataFrame(data)
 
-# ID를 기준으로 중복된 행 제거 (첫 번째 값 유지, 순서 유지)
-df = df.drop_duplicates(subset=["id"], keep="first")
+# 기존 CSV 파일이 존재하면 데이터를 합치기 전에 새로운 데이터만 중복 제거
+if os.path.exists(csv_filename):
+    df_existing = pd.read_csv(csv_filename, encoding="utf-8-sig")
 
-df.to_csv("samsung_comments.csv", index=False, encoding="utf-8-sig")
+    # 새로운 데이터(df_new)만 중복 제거 (기존 데이터에는 영향 없음)
+    df_new = df_new.drop_duplicates(subset=["id"], keep="first")
+
+    # 기존 데이터와 병합
+    df_combined = pd.concat([df_new, df_existing], ignore_index=True)
+else:
+    df_combined = df_new  # 파일이 없으면 새 데이터만 저장
+
+# 최종 데이터 저장
+df_combined.to_csv(csv_filename, index=False, encoding="utf-8-sig")
 
 # 웹드라이버 종료
 driver.quit()
 
 # 결과 확인
-print(df.head())
+print(df_combined.head())
