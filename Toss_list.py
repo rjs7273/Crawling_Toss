@@ -9,8 +9,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
-
-
 # 크롬 드라이버 설정
 chrome_options = Options()
 chrome_options.add_argument("--window-size=1920x1080")
