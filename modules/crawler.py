@@ -7,10 +7,11 @@ from modules.storage import get_latest_id, save_to_csv
 from selenium.webdriver.common.by import By
 
 class Crawler:
-    def __init__(self, driver, ticker, cutoff_time):
+    def __init__(self, driver, ticker, stock_name, cutoff_time):
         """Crawler 클래스 초기화"""
         self.driver = driver
-        self.ticker = ticker  # 티커 정보 저장
+        self.ticker = ticker  # 티커 코드
+        self.stock_name = stock_name  # 종목명 추가
         self.url = f"https://tossinvest.com/stocks/A{ticker}/community"
         self.csv_filename = f"data/{ticker}_comments.csv"
         self.latest_id = get_latest_id(self.csv_filename)
@@ -24,10 +25,6 @@ class Crawler:
 
         for article in articles:
             post_id = article.get_attribute("data-post-anchor-id")
-            if self.latest_id and post_id == self.latest_id:
-                print(f"[{self.ticker}] 기존 ID ({self.latest_id})와 일치하는 댓글 발견. 크롤링 중단.")
-                self.stop_crawling = True
-                return
 
             title_element = article.find_element(By.CSS_SELECTOR, "a span.tw-1r5dc8g0")
             title = title_element.text.strip() if title_element else None
@@ -39,6 +36,11 @@ class Crawler:
             comment_time = parser.isoparse(comment_time_str) if comment_time_str else None
 
             # 특정 시간 이전의 데이터가 나오면 중단
+            if self.latest_id and comment_time and post_id == self.latest_id and comment_time > self.cutoff_time:
+                print(f"[{self.ticker}] 기존 ID ({self.latest_id})와 일치하는 댓글 발견. 크롤링 중단.")
+                self.stop_crawling = True
+                return
+            
             if comment_time and comment_time < self.cutoff_time:
                 print(f"[{self.ticker}] {comment_time} < {self.cutoff_time}, 수집 중단.")
                 self.stop_crawling = True
@@ -48,12 +50,12 @@ class Crawler:
 
             row = {
                 "id": post_id,
-                "flatform": 'toss',
+                "platform": 'toss',
                 "ticker": self.ticker,
+                "stock_name": self.stock_name, 
                 "title": title,
                 "content": content,
                 "comment_time": comment_time_str,
-                "stock_name": None,
                 "quantity": None,
                 "transaction_type": None,
                 "price_per_share": None,
@@ -76,5 +78,9 @@ class Crawler:
             if not self.stop_crawling:
                 scroll_down(self.driver)
 
-        save_to_csv(self.data, self.csv_filename)
-        print(f"[{self.ticker}] 크롤링 완료. 저장된 데이터 개수: {len(self.data)}")
+        if self.data:
+            save_to_csv(self.data, self.csv_filename)
+            print(f"[{self.ticker}] 크롤링 완료. 저장된 데이터 개수: {len(self.data)}")
+        else:
+            print(f"[{self.ticker}] 크롤링된 데이터가 없어 CSV를 생성/변경하지 않습니다.")
+

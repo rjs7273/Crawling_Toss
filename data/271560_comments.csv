@@ -1,3 +1,3 @@
-﻿id,flatform,ticker,title,content,comment_time,stock_name,quantity,transaction_type,price_per_share,transaction_date,profit
-102442678,toss,271560,,벌써 출발한다고 설마~,2025-03-17T09:48:54+09:00,,,,,,
-102441404,toss,271560,흐름좋네용,홀딩,2025-03-17T09:39:47+09:00,,,,,,
+﻿id,platform,ticker,stock_name,title,content,comment_time,quantity,transaction_type,price_per_share,transaction_date,profit
+102468504,toss,271560,오리온,,13만원 함 찍어보자,2025-03-17T13:47:38+09:00,,,,,
+102465628,toss,271560,오리온,오리온 존버성공,다들 오리온하새요,2025-03-17T13:18:56+09:00,1.0,구매,97500.0,1월 16일 10:34,

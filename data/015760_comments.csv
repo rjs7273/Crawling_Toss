@@ -1,3 +1,3 @@
-﻿id,flatform,ticker,title,content,comment_time,stock_name,quantity,transaction_type,price_per_share,transaction_date,profit
-102446412,toss,015760,진입,"투입 예정 시드의 1/16 투입된 시드 1/16 평단 22175 * 지지선부근 진입. 종전/여름되면 오를 거라 판단. * 원래 가격이 % 떨어지면 n번 물타는 전략을 고수하는데, 이 친구는 지지선부근 가격 유지돼도 더 진입할 수 있음.",2025-03-17T10:16:54+09:00,한국전력,50.0,구매,22175.0,3월 17일 10:14,
-102438036,toss,015760,,오오 한전 50년 전 가격인데 들어갈만한가,2025-03-17T09:21:43+09:00,,,,,,
+﻿id,platform,ticker,stock_name,title,content,comment_time,quantity,transaction_type,price_per_share,transaction_date,profit
+102472626,toss,015760,한국전력,,,2025-03-17T14:32:48+09:00,,,,,
+102468078,toss,015760,한국전력,,야수의 얼굴에  토끼의 심장 한번도 제대로 수익을 본적이 없음 오르는척 하다가 개미털기,2025-03-17T13:43:44+09:00,,,,,
