@@ -6,9 +6,8 @@
 
 ### 파일 설명
 
-- `Toss_list.py` : 실행 코드
-- `samsung_comments.csv` : 크롤링 결과물
-- `page.html` : 토스증권 페이지 HTML 저장본 (참고용)
+- `main.py` : 실행 코드
+- `data/...` : 크롤링 결과물
 
 ---
 
