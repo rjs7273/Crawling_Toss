@@ -19,7 +19,7 @@ def init_driver():
 def open_page(driver, url):
     """URL 열기"""
     driver.get(url)
-    time.sleep(3)
+    time.sleep(2)
 
 def change_recent_option(driver):
     """현재 정렬 상태를 확인하고 '최신순'이 아니면 변경"""
@@ -28,7 +28,7 @@ def change_recent_option(driver):
 
     if current_label == "인기순":
         sort_button.click()
-        time.sleep(3)
+        time.sleep(2)
     else:
         pass # 최신순인 경우
 
@@ -36,4 +36,4 @@ def change_recent_option(driver):
 def scroll_down(driver):
     """스크롤 다운"""
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(3)
+    time.sleep(2)

@@ -73,14 +73,25 @@ class Crawler:
         open_page(self.driver, self.url)
         change_recent_option(self.driver)
 
+        crawl_count = 0  # crawl_page 호출 횟수 카운트
+
         while not self.stop_crawling:
             self.crawl_page()
+            crawl_count += 1
+
+            # 10번마다 저장
+            if crawl_count % 10 == 0 and self.data:
+                save_to_csv(self.data, self.csv_filename)
+                print(f"[{self.ticker}] 임시 저장 완료 (crawl_page {crawl_count}회 실행됨). 저장된 데이터 개수: {len(self.data)}")
+
             if not self.stop_crawling:
                 scroll_down(self.driver)
 
+        # 마지막에 최종 저장
         if self.data:
             save_to_csv(self.data, self.csv_filename)
             print(f"[{self.ticker}] 크롤링 완료. 저장된 데이터 개수: {len(self.data)}")
         else:
             print(f"[{self.ticker}] 크롤링된 데이터가 없어 CSV를 생성/변경하지 않습니다.")
+
 
