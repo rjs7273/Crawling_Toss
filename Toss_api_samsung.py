@@ -34,7 +34,7 @@ headers = {
 
 
 # 수집할 날짜 범위 (YYYY-MM-DD)
-start_date = "2025-03-15"
+start_date = "2023-03-15"
 end_date = date.today().strftime("%Y-%m-%d")  # 오늘 날짜로 고정
 
 # 파일명
